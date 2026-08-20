@@ -4,7 +4,132 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Customer Inquiry Form</title>
-  <link rel="stylesheet" href="style.css" />
+  <!-- <link rel="stylesheet" href="style.css" /> -->
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 30px 16px;
+      background: linear-gradient(180deg, #0b1a30, #050c18);
+      color: #222;
+      font-family: Arial, sans-serif;
+    }
+    
+    .container {
+      width: 100%;
+      max-width: 650px;
+      margin: 0 auto;
+    }
+    
+    form {
+      background: #ffffff;
+      padding: 32px;
+      border-radius: 14px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+    }
+    
+    h1 {
+      margin-top: 0;
+      margin-bottom: 8px;
+      font-size: 30px;
+    }
+    
+    .intro {
+      margin-top: 0;
+      margin-bottom: 28px;
+      color: #666;
+    }
+    
+    label {
+      display: block;
+      margin-top: 18px;
+      margin-bottom: 7px;
+      font-weight: 600;
+    }
+    
+    input,
+    select,
+    textarea {
+      width: 100%;
+      padding: 13px;
+      border: 1px solid #cfd4da;
+      border-radius: 7px;
+      font: inherit;
+      background: #fff;
+    }
+    
+    textarea {
+      resize: vertical;
+    }
+    
+    input:focus,
+    select:focus,
+    textarea:focus {
+      outline: none;
+      border-color: #2563eb;
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+    }
+    
+    .consent {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      font-weight: normal;
+      line-height: 1.4;
+    }
+    
+    .consent input {
+      width: auto;
+      margin-top: 3px;
+    }
+    
+    button {
+      width: 100%;
+      margin-top: 25px;
+      padding: 14px;
+      border: 0;
+      border-radius: 7px;
+      background: #111827;
+      color: white;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+    
+    button:hover {
+      background: #2563eb;
+    }
+    
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    
+    #message {
+      display: none;
+      margin-bottom: 0;
+      padding: 12px;
+      border-radius: 6px;
+      text-align: center;
+    }
+    
+    #message.success {
+      display: block;
+      color: #166534;
+      background: #dcfce7;
+    }
+    
+    #message.error {
+      display: block;
+      color: #991b1b;
+      background: #fee2e2;
+    }
+  </style>
 </head>
 <body>
   <main class="container">
@@ -85,7 +210,96 @@
       <p id="message" role="status"></p>
     </form>
   </main>
-  <script src="script.js"></script>
+  <script>
+    const SUPABASE_URL = "https://drilkkslcvfbwhhgkfbo.supabase.co";
+
+const SUPABASE_ANON_KEY =
+  "sb_publishable_Hkm47akggqbaBdOkukx1-Q_Csj0rrKQ";
+
+document.addEventListener("DOMContentLoaded", () => {
+  const form = document.getElementById("leadForm");
+  const button = document.getElementById("submitButton");
+  const message = document.getElementById("message");
+
+  if (!form || !button || !message) {
+    console.error(
+      "Missing HTML element. Check leadForm, submitButton, and message IDs."
+    );
+    return;
+  }
+
+  function showMessage(text, type) {
+    message.textContent = text;
+    message.className = type;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+
+    button.disabled = true;
+    button.textContent = "Submitting...";
+    message.textContent = "";
+    message.className = "";
+
+    const formData = new FormData(form);
+
+    const getText = (name) =>
+      String(formData.get(name) || "").trim();
+
+    const lead = {
+      full_name: getText("full_name"),
+      email: getText("email"),
+      phone: getText("phone"),
+      company_name: getText("company_name"),
+      service_interest: getText("service_interest"),
+      estimated_budget: getText("estimated_budget"),
+      start_timeline: getText("start_timeline"),
+      inquiry_message: getText("inquiry_message"),
+      preferred_contact_method: getText("preferred_contact_method"),
+      status: "new",
+      email_sent: false
+    };
+
+    try {
+      const response = await fetch(`${SUPABASE_URL}/rest/v1/leads`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "apikey": SUPABASE_ANON_KEY,
+          "Authorization": `Bearer ${SUPABASE_ANON_KEY}`,
+          "Prefer": "return=representation"
+        },
+        body: JSON.stringify(lead)
+      });
+
+      const result = await response.text();
+
+      console.log("Supabase status:", response.status);
+      console.log("Supabase response:", result);
+
+      if (!response.ok) {
+        throw new Error(result || "Supabase rejected the submission.");
+      }
+
+      form.reset();
+      showMessage(
+        "Thank you. Your inquiry was submitted successfully.",
+        "success"
+      );
+    } catch (error) {
+      console.error("Submission error:", error);
+
+      showMessage(
+        `Submission failed: ${error.message}`,
+        "error"
+      );
+    } finally {
+      button.disabled = false;
+      button.textContent = "Submit inquiry";
+    }
+  });
+});
+  </script>
 
 </body>
 </html>
